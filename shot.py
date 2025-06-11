@@ -1,7 +1,7 @@
 import pygame
 from circleshape import CircleShape
 from constants import *
-import random
+
 
 class Shot(CircleShape):
 
