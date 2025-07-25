@@ -1,7 +1,5 @@
 import pygame
 from circleshape import CircleShape
-from constants import *
-
 
 class Shot(CircleShape):
 
@@ -13,3 +11,5 @@ class Shot(CircleShape):
 
     def update(self, dt):
         self.position += self.velocity * dt
+        self.killFromGroups()
+        

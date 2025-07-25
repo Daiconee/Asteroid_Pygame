@@ -1,8 +1,10 @@
 from player import *
+from playermouse import PlayerMouse
 from sys import exit 
-from asteroid_daicone import Asteroid
 from asteroid import Asteroid
 from asteroidfield import AsteroidField
+from particle import Particle
+
 from random import randint
 
 def main():
@@ -23,18 +25,27 @@ def main():
     updatable = pygame.sprite.Group()
     drawable = pygame.sprite.Group()
     wrapable = pygame.sprite.Group()
+    killable = pygame.sprite.Group()
     asteroids = pygame.sprite.Group()
     shots = pygame.sprite.Group()
+    particles = pygame.sprite.Group()
 
-    Player.containers = (updatable, drawable, wrapable)
-    Asteroid.containers = (updatable, drawable, asteroids)
+    Shot.containers = (updatable, killable, drawable, shots)
+    #Player.containers = (updatable, drawable, wrapable)
+    PlayerMouse.containers = (updatable, drawable, wrapable)
+    Asteroid.containers = (updatable, killable, drawable, asteroids)
     AsteroidField.containers = (updatable)
-    Shot.containers = (updatable, drawable, shots)
+    Particle.containers = (particles)
+    
 
-    player = Player(SCREEN_WIDTH/2, SCREEN_HEIGHT/2)
-    #asteroid = Asteroid(0,0,0)
+    player = PlayerMouse(SCREEN_WIDTH/2, SCREEN_HEIGHT/2)
     asteroidfield = AsteroidField()
 
+    background_image = pygame.image.load("assets/Space_Background.png")
+
+    alpha_value = 120  # Adjust this value for desired darkness (0-255)
+    dark_overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    dark_overlay.fill((0, 0, 0, alpha_value))
 
     while True:
         for event in pygame.event.get():
@@ -50,47 +61,32 @@ def main():
                     score = 0   
                     game_state = "running"
                     
-
         dt = clock.tick(60) / 1000
 
         if game_state == "running":
             spawn_timer += dt
-            # if spawn_timer > ASTEROID_SPAWN_RATE:
-            #     spawn_timer = 0
-            #     asteroid = Asteroid(0,0,0)
-            screen.fill((0,0,0))
+            screen.blit(background_image, (0, 0))
+            screen.blit(dark_overlay, (0,0))
             updatable.update(dt)
             for sprite in wrapable:
                 sprite.wrap()
             for sprite in drawable:
                 sprite.draw(screen)
+            for sprite in killable:
+                sprite.killFromGroups()
             font_score = font.render(f"Score: {score}", True, "white")
             screen.blit(font_score, (50,50))
-            
-            for shot in shots:
-                for asteroid in asteroids:
-                    if shot.collision(asteroid):
-                        shot.kill()
-                        asteroid.kill()
-                        if asteroid.radius == ASTEROID_MIN_RADIUS:
-                            score += 15
-                            continue
-                        angle = randint(20,50)
-                        if asteroid.radius == 3*ASTEROID_MIN_RADIUS:
-                            score += 5
-                            asteroidfield.spawn(2*ASTEROID_MIN_RADIUS, asteroid.position, asteroid.velocity.rotate(angle)*1.2)
-                            asteroidfield.spawn(2*ASTEROID_MIN_RADIUS, asteroid.position, asteroid.velocity.rotate(-angle)*1.2)
-                        elif asteroid.radius == 2*ASTEROID_MIN_RADIUS:
-                            score += 10
-                            asteroidfield.spawn(ASTEROID_MIN_RADIUS, asteroid.position, asteroid.velocity.rotate(angle)*1.2)
-                            asteroidfield.spawn(ASTEROID_MIN_RADIUS, asteroid.position, asteroid.velocity.rotate(-angle)*1.2)
+            score += shotCollisionScoreSpawn(shots, asteroids, asteroidfield)
 
-            for asteroid in asteroids:
-                if asteroid.collision(player):
-                    game_state = "game_over"
-                    print("Game Over")
-                    #pygame.quit()
-                    #exit()
+            keys = pygame.key.get_pressed()
+            if(pygame.mouse.get_pressed()[0]):
+                particle = Particle(pygame.mouse.get_pos())
+                particle.color = "yellow"
+            particles.draw(screen)
+            # for asteroid in asteroids:
+            #     if asteroid.collision(player):
+            #         game_state = "game_over"
+            #         print("Game Over")
         
         elif game_state == "game_over":
             screen.fill((0,0,0))
@@ -102,12 +98,19 @@ def main():
             screen.blit(font_start_text, (SCREEN_WIDTH/8, 3*SCREEN_HEIGHT/4))   
             screen.blit(font_currscore, (SCREEN_WIDTH/8, SCREEN_HEIGHT/2))   
             screen.blit(font_highscore, (SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
-            
-                      
+                    
         pygame.display.flip()
 
 
-
+def shotCollisionScoreSpawn(shots, asteroids, asteroidfield):
+    score = 0
+    for shot in shots:
+        for asteroid in asteroids:
+            if shot.collision(asteroid):
+                shot.kill()
+                asteroid.kill()
+                score += asteroidfield.spawnAfterShot(asteroid)
+    return score
 
 if __name__ == "__main__":
     main()
