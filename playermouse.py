@@ -7,22 +7,54 @@ class PlayerMouse(CircleShape):
     def __init__(self, x, y):
         super().__init__(x, y, PLAYER_RADIUS)
         self.mouseDirNorm = pygame.math.Vector2(0,0)
+        self.len = 60
         self.timer = 0
-
-    def triangle(self):
-        perpend = self.mouseDirNorm.rotate(90)
-        a = self.position + 30 * self.mouseDirNorm
-        b = self.position - 5 * self.mouseDirNorm + 15 * perpend 
-        c = self.position - 5 * self.mouseDirNorm - 15 * perpend
-        return (a,b,c)
+        self.genImg()
+        # self.genMask()
+        self.highlight = "white"
 
     def draw(self, screen):
-        pygame.draw.polygon(screen, "red", self.triangle(), 2)
+        self.genImg()
+        tri = self.triangle()
+        pygame.draw.polygon(self.image, "red", tri, 2)
+        self.genMask()
+        # maskImg = self.mask.to_surface().convert_alpha()
+        # maskImg.set_colorkey("black")
+        # screen.blit(maskImg, (0,0))
+        screen.blit(self.image, self.rect)
+        # pygame.draw.polygon(screen, "red", tri, 2)
+        # pygame.draw.circle(screen, "green", self.position, 4, 2) # check self.position on screen
+        #pygame.draw.rect(screen, self.highlight, self.rect, 2)
+        
+    
+    def triangle(self):
+        center = (self.len // 2, self.len // 2)
+        #center = self.rect.center
+        perpend = self.mouseDirNorm.rotate(90)
+        a = center + self.len * 0.4 * self.mouseDirNorm
+        b = center - self.len * 0.2 * (self.mouseDirNorm + perpend)
+        c = center - self.len * 0.2 * (self.mouseDirNorm - perpend)
+        return (a, b, c)
 
+    def collisionAsteroid(self, asteroid):
+        p = (-self.rect.x + asteroid.rect.x, -self.rect.y + asteroid.rect.y)
+        print(p)
+        print(self.mask.overlap(asteroid.mask, p))
+        if self.mask.overlap(asteroid.mask, p):
+            return True
+
+    def genImg(self):    
+        self.image = pygame.Surface((self.len,self.len)).convert_alpha()
+        self.image.set_colorkey("black")
+        self.rect = self.image.get_rect(center=self.position)
+    
+    def genMask(self):
+        self.mask = pygame.mask.from_surface(self.image)
+    
     def update(self, dt):
         self.timer -= dt
         self.updateMouseDir()
-            
+
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] and self.timer < 0:
             self.timer = PLAYER_SHOOT_COOLDOWN
@@ -37,6 +69,7 @@ class PlayerMouse(CircleShape):
         if keys[pygame.K_s]:
             self.move(dt, pygame.K_s)
 
+        self.rect.center = self.position
 
     def updateMouseDir(self):
         mouseX, mouseY = pygame.mouse.get_pos()

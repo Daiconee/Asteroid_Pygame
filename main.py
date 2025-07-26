@@ -83,10 +83,11 @@ def main():
                 particle = Particle(pygame.mouse.get_pos())
                 particle.color = "yellow"
             particles.draw(screen)
-            # for asteroid in asteroids:
-            #     if asteroid.collision(player):
-            #         game_state = "game_over"
-            #         print("Game Over")
+
+            for asteroid in asteroids:     
+                if player.collisionAsteroid(asteroid):
+                    game_state = "game_over"
+                    print("Game Over")
         
         elif game_state == "game_over":
             screen.fill((0,0,0))

@@ -3,7 +3,7 @@ from playermouse import PlayerMouse
 from sys import exit 
 from asteroid import Asteroid
 from asteroidfield import AsteroidField
-from random import randint
+import random
 
 def main():
     pygame.init()
@@ -61,7 +61,7 @@ def main():
                 sprite.draw(screen)
             for sprite in killable:
                 sprite.killFromGroups()
-            
+
             for shot in shots:
                 for asteroid in asteroids:
                     if shot.collision(asteroid):
@@ -70,7 +70,7 @@ def main():
                         if asteroid.radius == ASTEROID_MIN_RADIUS:
                             score += 15
                             continue
-                        angle = randint(20,100)
+                        angle = random.randint(20,100)
                         if asteroid.radius == 3*ASTEROID_MIN_RADIUS:
                             score += 5
                             asteroidfield.spawn(2*ASTEROID_MIN_RADIUS, asteroid.position, asteroid.velocity.rotate(angle)*1.4)
@@ -81,8 +81,6 @@ def main():
                             asteroidfield.spawn(ASTEROID_MIN_RADIUS, asteroid.position, asteroid.velocity.rotate(-angle)*1.6)
                       
         pygame.display.flip()
-
-
 
 
 if __name__ == "__main__":
