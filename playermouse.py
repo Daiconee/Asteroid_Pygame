@@ -8,28 +8,26 @@ class PlayerMouse(CircleShape):
         super().__init__(x, y, PLAYER_RADIUS)
         self.mouseDirNorm = pygame.math.Vector2(0,0)
         self.len = 60
-        self.timer = 0
+        self.reset()
         self.genImg()
         # self.genMask()
-        self.highlight = "white"
+        
 
     def draw(self, screen):
         self.genImg()
         tri = self.triangle()
-        pygame.draw.polygon(self.image, "red", tri, 2)
+        pygame.draw.polygon(self.image, self.color, tri, 2)
         self.genMask()
         # maskImg = self.mask.to_surface().convert_alpha()
         # maskImg.set_colorkey("black")
-        # screen.blit(maskImg, (0,0))
+        # screen.blit(maskImg, (0,0)) # draw mask on screen to check 
         screen.blit(self.image, self.rect)
-        # pygame.draw.polygon(screen, "red", tri, 2)
         # pygame.draw.circle(screen, "green", self.position, 4, 2) # check self.position on screen
-        #pygame.draw.rect(screen, self.highlight, self.rect, 2)
+        # pygame.draw.rect(screen, "white", self.rect, 2) # draw rect on screen to check 
         
     
     def triangle(self):
         center = (self.len // 2, self.len // 2)
-        #center = self.rect.center
         perpend = self.mouseDirNorm.rotate(90)
         a = center + self.len * 0.4 * self.mouseDirNorm
         b = center - self.len * 0.2 * (self.mouseDirNorm + perpend)
@@ -38,10 +36,12 @@ class PlayerMouse(CircleShape):
 
     def collisionAsteroid(self, asteroid):
         p = (-self.rect.x + asteroid.rect.x, -self.rect.y + asteroid.rect.y)
-        print(p)
-        print(self.mask.overlap(asteroid.mask, p))
         if self.mask.overlap(asteroid.mask, p):
-            return True
+            if not self.invincible:
+                self.health -= 1
+                if self.health <= 0:
+                    return True 
+                self.toggleInvincibility()
 
     def genImg(self):    
         self.image = pygame.Surface((self.len,self.len)).convert_alpha()
@@ -53,6 +53,7 @@ class PlayerMouse(CircleShape):
     
     def update(self, dt):
         self.timer -= dt
+        self.processInvincibility(dt)
         self.updateMouseDir()
 
         keys = pygame.key.get_pressed()
@@ -70,6 +71,17 @@ class PlayerMouse(CircleShape):
             self.move(dt, pygame.K_s)
 
         self.rect.center = self.position
+
+    def processInvincibility(self, dt):
+        if self.invincible:
+            self.invincible_timer -= dt
+            if self.invincible_timer < 0:
+                self.toggleInvincibility()
+
+    def toggleInvincibility(self):
+        self.invincible = True if self.invincible == False else False
+        self.color = "green" if self.invincible else "red"
+        self.invincible_timer = PLAYER_INVINCIBILITY_DURATION
 
     def updateMouseDir(self):
         mouseX, mouseY = pygame.mouse.get_pos()
@@ -102,3 +114,10 @@ class PlayerMouse(CircleShape):
     def shoot(self):
         shot = Shot(self.position.x, self.position.y, SHOT_RADIUS)
         shot.velocity = PLAYER_SHOOT_SPEED * self.mouseDirNorm
+    
+    def reset(self):
+        self.timer = 0
+        self.health = PLAYER_STARTING_HEALTH
+        self.invincible = False
+        self.invincible_timer = PLAYER_INVINCIBILITY_DURATION
+        self.color = "red"

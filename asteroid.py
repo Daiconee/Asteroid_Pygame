@@ -6,9 +6,11 @@ import random
 class Asteroid(CircleShape):
     numPoints = 8
     rotationAngle = 360 / numPoints
+    starting_health = 1
 
     def __init__(self, x, y, radius):  
         super().__init__(x, y, radius)
+        self.health = self.__class__.starting_health
         self.points = []
         self.imgCenter = pygame.math.Vector2(radius, radius) # center on self.image
         self.genPoints()
@@ -38,7 +40,7 @@ class Asteroid(CircleShape):
         self.image.set_colorkey("black")
         self.rect = self.image.get_rect(center=self.position)
         pygame.draw.polygon(self.image, "white", self.points, 2)
-        pygame.draw.circle(self.image, "red", self.imgCenter, 4, 2)
+        #pygame.draw.circle(self.image, "red", self.imgCenter, 4, 2)
 
     def genMask(self):
         self.mask = pygame.mask.from_surface(self.image)

@@ -7,6 +7,9 @@ settings: nyx8, stars, dust, darken
 
 **ToDo:**
 - [x] Add a scoring system
+- [x] Add multiple levels to the game
+    - [x] Increase asteroid spawn rate at `100 * 2 ** (game_level - 1)` increments in score (100, 200, 400, 800 ...) at `game_level` (1, 2, 3, 4 ...)
+    - [x] Add strong asteroids at level 3
 - [ ] Implement multiple lives and respawning
 - [ ] Add an explosion effect for the asteroids
 - [ ] Add acceleration to the player movement

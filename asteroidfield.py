@@ -1,6 +1,7 @@
 import pygame
 import random
 from asteroid import Asteroid
+from asteroid_strong import Asteroid_Strong
 from constants import *
 
 
@@ -30,14 +31,19 @@ class AsteroidField(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self, self.containers)
-        #self.spawn_timer = 0.0
-        self.spawn_timer = 59
+        self.reset()
         
 
     def spawn(self, radius, position, velocity):
-        asteroid = Asteroid(position.x, position.y, radius)
+        if self.game_level > 2:
+            asteroid = self.chooseSpawn()(position.x, position.y, radius)
+        else:
+            asteroid = Asteroid(position.x, position.y, radius)
         asteroid.velocity = velocity
     
+    def chooseSpawn(self):
+        return Asteroid if random.random() > self.strong_spawn_rate else Asteroid_Strong
+
     def spawnAfterShot(self, asteroid):
         score = 0
         if asteroid.radius == ASTEROID_MIN_RADIUS:
@@ -55,7 +61,7 @@ class AsteroidField(pygame.sprite.Sprite):
     
     def update(self, dt):
         self.spawn_timer += dt
-        if self.spawn_timer > ASTEROID_SPAWN_RATE:
+        if self.spawn_timer > self.spawn_rate:
             self.spawn_timer = 0
 
             # spawn a new asteroid at a random edge
@@ -66,3 +72,9 @@ class AsteroidField(pygame.sprite.Sprite):
             position = edge[1](random.uniform(0, 1))
             kind = random.randint(1, ASTEROID_KINDS)
             self.spawn(ASTEROID_MIN_RADIUS * kind, position, velocity)
+
+    def reset(self):
+        self.spawn_timer = 0.0
+        self.spawn_rate = ASTEROID_SPAWN_RATE
+        self.strong_spawn_rate = 0.5
+        self.game_level = 1

@@ -11,13 +11,16 @@ def main():
     pygame.init()
     pygame.display.set_caption("Asteroids")
     
+
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     clock = pygame.time.Clock()
     score = 0
     high_score = 0
     spawn_timer = 0
     game_state = "running"
-    font = pygame.font.SysFont(None, 50)
+    game_level = 1
+    levelup_score = LEVEL_UP_SCORE
+    font = pygame.font.SysFont(None, 30)
 
     font_game_name = font.render("Asteroids", True, "white")
     font_start_text = font.render("Press 'r' to start", True, "white")
@@ -31,7 +34,6 @@ def main():
     particles = pygame.sprite.Group()
 
     Shot.containers = (updatable, killable, drawable, shots)
-    #Player.containers = (updatable, drawable, wrapable)
     PlayerMouse.containers = (updatable, drawable, wrapable)
     Asteroid.containers = (updatable, killable, drawable, asteroids)
     AsteroidField.containers = (updatable)
@@ -64,6 +66,16 @@ def main():
         dt = clock.tick(60) / 1000
 
         if game_state == "running":
+
+            # -------------- update level and spawning ---------------
+            if score > levelup_score and game_level < 4: # increase spawn rate at every level
+                game_level += 1
+                asteroidfield.spawn_rate /= 1.5
+                levelup_score *= 2 # increase new score hit to level up 
+                if game_level > 2:
+                    asteroidfield.game_level = game_level  
+            # --------------------------------------------------------
+
             spawn_timer += dt
             screen.blit(background_image, (0, 0))
             screen.blit(dark_overlay, (0,0))
@@ -74,8 +86,16 @@ def main():
                 sprite.draw(screen)
             for sprite in killable:
                 sprite.killFromGroups()
+
+            # -------------- score and level text --------------------
             font_score = font.render(f"Score: {score}", True, "white")
+            level_display = font.render(f"Level: {game_level}", True, "white")
             screen.blit(font_score, (50,50))
+            screen.blit(level_display, (SCREEN_WIDTH - 200,50))
+            # spawn_rate = font.render(f"Spawn rate: {asteroidfield.spawn_rate}", True, "white")
+            # screen.blit(spawn_rate, (SCREEN_WIDTH - 300,100))
+            # --------------------------------------------------------
+
             score += shotCollisionScoreSpawn(shots, asteroids, asteroidfield)
 
             keys = pygame.key.get_pressed()
@@ -84,10 +104,13 @@ def main():
                 particle.color = "yellow"
             particles.draw(screen)
 
+            # -------------- asteroid player collision check ---------
             for asteroid in asteroids:     
                 if player.collisionAsteroid(asteroid):
+                    player.reset()
+                    asteroidfield.reset()
                     game_state = "game_over"
-                    print("Game Over")
+            # --------------------------------------------------------
         
         elif game_state == "game_over":
             screen.fill((0,0,0))
@@ -109,8 +132,11 @@ def shotCollisionScoreSpawn(shots, asteroids, asteroidfield):
         for asteroid in asteroids:
             if shot.collision(asteroid):
                 shot.kill()
-                asteroid.kill()
-                score += asteroidfield.spawnAfterShot(asteroid)
+                if asteroid.health == 1:
+                    asteroid.kill()
+                    score += asteroidfield.spawnAfterShot(asteroid)
+                else:
+                    asteroid.health -= 1
     return score
 
 if __name__ == "__main__":
