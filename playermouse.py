@@ -1,6 +1,5 @@
 import pygame
-from circleshape import CircleShape
-from shot import Shot
+from circleshape import *
 from constants import *
 
 class PlayerMouse(CircleShape):
@@ -11,17 +10,18 @@ class PlayerMouse(CircleShape):
         self.reset()
         self.genImg()
         # self.genMask()
+        self.resetInvincibilityTicker()
         
-
     def draw(self, screen):
-        self.genImg()
-        tri = self.triangle()
-        pygame.draw.polygon(self.image, self.color, tri, 2)
-        self.genMask()
+        if not self.invincibilityTicker % 7:
+            self.genImg()
+            tri = self.triangle()
+            pygame.draw.polygon(self.image, self.color, tri, 2)
+            self.genMask()
+            screen.blit(self.image, self.rect)
         # maskImg = self.mask.to_surface().convert_alpha()
         # maskImg.set_colorkey("black")
         # screen.blit(maskImg, (0,0)) # draw mask on screen to check 
-        screen.blit(self.image, self.rect)
         # pygame.draw.circle(screen, "green", self.position, 4, 2) # check self.position on screen
         # pygame.draw.rect(screen, "white", self.rect, 2) # draw rect on screen to check 
         
@@ -43,6 +43,14 @@ class PlayerMouse(CircleShape):
                     return True 
                 self.toggleInvincibility()
 
+    def reset(self):
+        self.shotTimer = 0
+        self.bombTimer = 0
+        self.health = PLAYER_STARTING_HEALTH
+        self.invincible = False
+        self.invincible_timer = PLAYER_INVINCIBILITY_DURATION
+        self.color = "red"
+
     def genImg(self):    
         self.image = pygame.Surface((self.len,self.len)).convert_alpha()
         self.image.set_colorkey("black")
@@ -52,14 +60,19 @@ class PlayerMouse(CircleShape):
         self.mask = pygame.mask.from_surface(self.image)
     
     def update(self, dt):
-        self.timer -= dt
+        self.shotTimer -= dt
+        self.bombTimer -= dt
         self.processInvincibility(dt)
         self.updateMouseDir()
 
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE] and self.timer < 0:
-            self.timer = PLAYER_SHOOT_COOLDOWN
+        if keys[pygame.K_SPACE] and self.shotTimer < 0:
+            self.shotTimer = PLAYER_SHOOT_COOLDOWN
             self.shoot()
+        
+        if keys[pygame.K_LSHIFT] and self.bombTimer < 0:
+            self.bombTimer = PLAYER_BOMB_COOLDOWN
+            self.dropBomb()
 
         if keys[pygame.K_a]:
             self.move(dt, pygame.K_a)
@@ -75,13 +88,18 @@ class PlayerMouse(CircleShape):
     def processInvincibility(self, dt):
         if self.invincible:
             self.invincible_timer -= dt
+            self.invincibilityTicker += 1
             if self.invincible_timer < 0:
                 self.toggleInvincibility()
+                self.resetInvincibilityTicker()
 
     def toggleInvincibility(self):
-        self.invincible = True if self.invincible == False else False
+        self.invincible = True if not self.invincible else False
         self.color = "green" if self.invincible else "red"
         self.invincible_timer = PLAYER_INVINCIBILITY_DURATION
+        
+    def resetInvincibilityTicker(self):
+        self.invincibilityTicker = 7
 
     def updateMouseDir(self):
         mouseX, mouseY = pygame.mouse.get_pos()
@@ -115,9 +133,7 @@ class PlayerMouse(CircleShape):
         shot = Shot(self.position.x, self.position.y, SHOT_RADIUS)
         shot.velocity = PLAYER_SHOOT_SPEED * self.mouseDirNorm
     
-    def reset(self):
-        self.timer = 0
-        self.health = PLAYER_STARTING_HEALTH
-        self.invincible = False
-        self.invincible_timer = PLAYER_INVINCIBILITY_DURATION
-        self.color = "red"
+
+
+    def dropBomb(self):
+        bomb = Bomb(self.position.x, self.position.y, BOMB_RADIUS)

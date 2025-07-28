@@ -50,3 +50,17 @@ class Asteroid(CircleShape):
         # somehow putting `self.rect.center = self.position` here results in a bug
         # where the asteroid appears in the top left when spawning
         self.killFromGroups()
+
+class Asteroid_Strong(Asteroid):
+    starting_health = 2
+
+    def __init__(self, x, y, radius):
+        super().__init__(x, y, radius)
+        
+    def draw(self, screen):
+        super().draw(screen)
+        if self.health > 1:
+            pygame.draw.circle(screen, "red", self.rect.center, 4, 2)
+    
+    def genImg(self):
+        super().genImg()
